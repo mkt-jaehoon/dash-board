@@ -2,20 +2,12 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { parseApiResponse } from "@/lib/utils";
 
 type LoginResponse = {
   ok?: boolean;
   error?: string;
 };
-
-async function parseApiResponse<T>(response: Response): Promise<T> {
-  const text = await response.text();
-  try {
-    return JSON.parse(text) as T;
-  } catch {
-    throw new Error(text || `요청 실패 (${response.status})`);
-  }
-}
 
 export function LoginForm({ nextPath }: { nextPath: string }) {
   const router = useRouter();

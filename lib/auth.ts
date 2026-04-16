@@ -1,5 +1,8 @@
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { AUTH_COOKIE } from "./config";
+
+const AUTH_TOKEN_MESSAGE = "dashboard-auth-v1";
 
 export function getDashboardPassword() {
   const password = process.env.DASHBOARD_PASSWORD;
@@ -9,8 +12,21 @@ export function getDashboardPassword() {
   return password;
 }
 
+function computeAuthToken(secret: string): string {
+  return crypto.createHmac("sha256", secret).update(AUTH_TOKEN_MESSAGE).digest("hex");
+}
+
 export function isAuthenticatedRequest(request: NextRequest) {
-  return request.cookies.get(AUTH_COOKIE)?.value === "ok";
+  const token = request.cookies.get(AUTH_COOKIE)?.value;
+  if (!token) return false;
+  const expected = computeAuthToken(getDashboardPassword());
+  if (token.length !== expected.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expected));
+}
+
+export function verifyPassword(input: string, expected: string): boolean {
+  if (input.length !== expected.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(input), Buffer.from(expected));
 }
 
 export function unauthorizedJson() {
@@ -18,7 +34,8 @@ export function unauthorizedJson() {
 }
 
 export function applyAuthCookie(response: NextResponse) {
-  response.cookies.set(AUTH_COOKIE, "ok", {
+  const token = computeAuthToken(getDashboardPassword());
+  response.cookies.set(AUTH_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

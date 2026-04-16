@@ -36,6 +36,10 @@ function GroupCard({ group }: { group: GroupStats }) {
             <span className="text-slate-500">CPA </span>
             <span className="font-semibold text-white">{groupCpa != null ? `${num(groupCpa)}원` : "-"}</span>
           </div>
+          <div>
+            <span className="text-slate-500">배당률 </span>
+            <span className="font-semibold text-white">{groupRate != null ? `${groupRate.toFixed(1)}%` : "-"}</span>
+          </div>
           <span className={`ml-auto shrink-0 text-slate-500 transition-transform duration-200 lg:ml-0 ${open ? "rotate-180" : ""}`}>
             ⌃
           </span>
@@ -77,8 +81,13 @@ export function GroupInsightSection({ media }: { media: MediaStats }) {
   if (!groups.length) return null;
 
   const topGroups = [...groups].sort((a, b) => b.today.db - a.today.db).slice(0, 5);
+  const topSet = new Set(topGroups.map((g) => g.name));
   const stalledGroups = groups.filter((g) => g.today.db === 0 && (g.d1?.db ?? 0) === 0);
-  const riskGroups = groups.filter((g) => g.grade === "bad" && g.today.db > 0);
+  const riskGroups = groups.filter((g) => g.grade === "bad" && g.today.db > 0 && !topSet.has(g.name));
+
+  const stalledCreatives = media.creatives.filter(
+    (c) => c.today.db === 0 && (c.d1?.db ?? 0) === 0,
+  );
 
   return (
     <div className="space-y-5">
@@ -109,6 +118,27 @@ export function GroupInsightSection({ media }: { media: MediaStats }) {
             </div>
             <div className="mt-3 text-xs leading-5 text-amber-100/75">
               최근 2일 연속 DB가 발생하지 않은 그룹입니다. 타게팅, 소재, 랜딩 흐름을 우선 점검하는 편이 좋습니다.
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {stalledCreatives.length > 0 ? (
+        <section>
+          <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-orange-300/90">최근 2일 성과 미발생 소재</div>
+          <div className="rounded-2xl border border-orange-500/20 bg-orange-500/[0.06] px-4 py-4">
+            <div className="flex flex-wrap gap-2">
+              {stalledCreatives.map((creative) => (
+                <span
+                  key={`${creative.code}-${creative.landing}`}
+                  className="break-all rounded-full bg-orange-500/12 px-3 py-1 text-xs text-orange-200 ring-1 ring-orange-500/20"
+                >
+                  {creative.code}
+                </span>
+              ))}
+            </div>
+            <div className="mt-3 text-xs leading-5 text-orange-100/75">
+              최근 2일 연속 DB가 발생하지 않은 소재입니다. 소재 교체 또는 타게팅 조정을 검토하세요.
             </div>
           </div>
         </section>

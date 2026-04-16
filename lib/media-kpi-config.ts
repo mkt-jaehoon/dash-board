@@ -1,4 +1,5 @@
 import { KpiData } from "./types";
+import { safeDiv } from "./utils";
 
 /**
  * KPI 항목 정의
@@ -14,10 +15,6 @@ export interface KpiMetricDef {
   unit: string;
   getValue: (kpi: KpiData) => number | null;
   deltaType: "pct" | "pp";
-}
-
-function safeDiv(a: number, b: number): number | null {
-  return b > 0 ? a / b : null;
 }
 
 export const ALL_KPI_METRICS: Record<string, KpiMetricDef> = {

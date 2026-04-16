@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cpa, diffPct, rate } from "@/lib/analyzer";
 import { InsightContent, MediaStats } from "@/lib/types";
 import { getAssigned, getCost, num } from "@/components/media-utils";
+import { parseApiResponse } from "@/lib/utils";
 
 type InsightResponse = {
   insight?: InsightContent;
@@ -13,16 +14,6 @@ type InsightResponse = {
 };
 
 const INSIGHT_CONCURRENCY = 2;
-
-function parseApiResponse<T>(response: Response): Promise<T> {
-  return response.text().then((text) => {
-    try {
-      return JSON.parse(text) as T;
-    } catch {
-      throw new Error(text || `요청 실패 (${response.status})`);
-    }
-  });
-}
 
 export function buildFallbackInsight(media: MediaStats): InsightContent {
   const todayCost = getCost(media.today);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthenticatedRequest, unauthorizedJson } from "@/lib/auth";
 import { loadCachedInsight, saveCachedInsight } from "@/lib/storage";
+import { safeDiv } from "@/lib/utils";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -95,10 +96,6 @@ function checkRateLimit(ip: string): boolean {
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const MAX_MODEL_RETRIES = 2;
-
-function safeDiv(a: number, b: number): number | null {
-  return b > 0 ? a / b : null;
-}
 
 function parseDate(value: string): Date | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);

@@ -327,10 +327,21 @@ export function analyze(rows: RawRow[], selectedDate?: string): AnalysisResult {
   const monthPrefix = targetDate.slice(0, 7);
   const recentWindows = buildRollingWindows(dates, targetIndex, 7, 3);
 
-  const todayRows = normalized.filter((row) => row._dateStr === targetDate);
-  const d1Rows = d1Date ? normalized.filter((row) => row._dateStr === d1Date) : [];
-  const d7Rows = normalized.filter((row) => row._dateStr === d7Date);
-  const monthRows = normalized.filter((row) => row._dateStr.startsWith(monthPrefix) && row._dateStr < targetDate);
+  const rowsByDate = new Map<string, typeof normalized>();
+  for (const row of normalized) {
+    if (!rowsByDate.has(row._dateStr)) rowsByDate.set(row._dateStr, []);
+    rowsByDate.get(row._dateStr)!.push(row);
+  }
+
+  const todayRows = rowsByDate.get(targetDate) ?? [];
+  const d1Rows = d1Date ? (rowsByDate.get(d1Date) ?? []) : [];
+  const d7Rows = rowsByDate.get(d7Date) ?? [];
+  const monthRows: typeof normalized = [];
+  for (const [dateKey, dateRows] of rowsByDate) {
+    if (dateKey.startsWith(monthPrefix) && dateKey < targetDate) {
+      monthRows.push(...dateRows);
+    }
+  }
 
   const overall: OverallStats = {
     today: agg(todayRows),
@@ -344,6 +355,26 @@ export function analyze(rows: RawRow[], selectedDate?: string): AnalysisResult {
     MediaStats[]
   >;
 
+  function indexByCreativeKey(rows: RawRow[]) {
+    const map = new Map<string, RawRow[]>();
+    for (const row of rows) {
+      const k = `${row.creativeCode}||${row.landing}`;
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(row);
+    }
+    return map;
+  }
+
+  function indexByGroup(rows: RawRow[]) {
+    const map = new Map<string, RawRow[]>();
+    for (const row of rows) {
+      const g = row.adGroup || "(미분류)";
+      if (!map.has(g)) map.set(g, []);
+      map.get(g)!.push(row);
+    }
+    return map;
+  }
+
   const buildMediaStats = (
     key: string,
     name: string,
@@ -351,16 +382,23 @@ export function analyze(rows: RawRow[], selectedDate?: string): AnalysisResult {
     matcher: (row: RawRow) => boolean,
     mediaTodayRows: RawRow[],
   ): MediaStats => {
+    const mediaD1Rows = d1Rows.filter(matcher);
+    const mediaD7Rows = d7Rows.filter(matcher);
+    const mediaMonthRows = monthRows.filter(matcher);
+
+    const d1ByCreative = indexByCreativeKey(mediaD1Rows);
+    const d7ByCreative = indexByCreativeKey(mediaD7Rows);
+    const monthByCreative = indexByCreativeKey(mediaMonthRows);
+
     const creativeTodayMap = buildCreativeMap(mediaTodayRows);
     const creatives: CreativeStats[] = [];
 
     for (const [creativeKey, todayCreativeRows] of creativeTodayMap.entries()) {
       const [code, landing] = creativeKey.split("||");
-      const creativeMatcher = (row: RawRow) => row.creativeCode === code && row.landing === landing;
       const sample = todayCreativeRows[0];
-      const d1CreativeRows = d1Rows.filter((row) => matcher(row) && creativeMatcher(row));
-      const d7CreativeRows = d7Rows.filter((row) => matcher(row) && creativeMatcher(row));
-      const monthCreativeRows = monthRows.filter((row) => matcher(row) && creativeMatcher(row));
+      const d1CreativeRows = d1ByCreative.get(creativeKey) ?? [];
+      const d7CreativeRows = d7ByCreative.get(creativeKey) ?? [];
+      const monthCreativeRows = monthByCreative.get(creativeKey) ?? [];
       const todayKpi = agg(todayCreativeRows);
       const d1Kpi = d1CreativeRows.length ? agg(d1CreativeRows) : null;
       const d7Kpi = d7CreativeRows.length ? agg(d7CreativeRows) : null;
@@ -381,36 +419,53 @@ export function analyze(rows: RawRow[], selectedDate?: string): AnalysisResult {
 
     creatives.sort((a, b) => b.today.db - a.today.db);
 
-    const mediaD1Rows = d1Rows.filter((row) => matcher(row));
-    const mediaD7Rows = d7Rows.filter((row) => matcher(row));
-    const recentDaily = recentWindows.map((window) => ({
-      date: window.date,
-      startDate: window.startDate,
-      endDate: window.endDate,
-      kpi: agg(normalized.filter((row) => window.dates.includes(row._dateStr) && matcher(row))),
-    }));
-
-    const groupTodayMap = new Map<string, RawRow[]>();
-    for (const row of mediaTodayRows) {
-      const groupName = row.adGroup || "(미분류)";
-      if (!groupTodayMap.has(groupName)) groupTodayMap.set(groupName, []);
-      groupTodayMap.get(groupName)!.push(row);
-    }
-
-    const groups: import("./types").GroupStats[] = [];
-    for (const [groupName, groupTodayRows] of groupTodayMap.entries()) {
-      const groupMatcher = (row: RawRow) => matcher(row) && (row.adGroup || "(미분류)") === groupName;
-      const groupD1Rows = d1Rows.filter(groupMatcher);
-      const groupD7Rows = d7Rows.filter(groupMatcher);
-      const todayKpi = agg(groupTodayRows);
-      const d1Kpi = groupD1Rows.length ? agg(groupD1Rows) : null;
-      const d7Kpi = groupD7Rows.length ? agg(groupD7Rows) : null;
-      const groupRecentDaily = recentWindows.map((window) => ({
+    const recentDaily = recentWindows.map((window) => {
+      const windowDateSet = new Set(window.dates);
+      const windowRows: RawRow[] = [];
+      for (const d of window.dates) {
+        const dateRows = rowsByDate.get(d);
+        if (dateRows) {
+          for (const row of dateRows) {
+            if (matcher(row)) windowRows.push(row);
+          }
+        }
+      }
+      return {
         date: window.date,
         startDate: window.startDate,
         endDate: window.endDate,
-        kpi: agg(normalized.filter((row) => window.dates.includes(row._dateStr) && groupMatcher(row))),
-      }));
+        kpi: agg(windowRows),
+      };
+    });
+
+    const groupTodayMap = indexByGroup(mediaTodayRows);
+    const d1ByGroup = indexByGroup(mediaD1Rows);
+    const d7ByGroup = indexByGroup(mediaD7Rows);
+
+    const groups: import("./types").GroupStats[] = [];
+    for (const [groupName, groupTodayRows] of groupTodayMap.entries()) {
+      const groupD1Rows = d1ByGroup.get(groupName) ?? [];
+      const groupD7Rows = d7ByGroup.get(groupName) ?? [];
+      const todayKpi = agg(groupTodayRows);
+      const d1Kpi = groupD1Rows.length ? agg(groupD1Rows) : null;
+      const d7Kpi = groupD7Rows.length ? agg(groupD7Rows) : null;
+      const groupRecentDaily = recentWindows.map((window) => {
+        const windowRows: RawRow[] = [];
+        for (const d of window.dates) {
+          const dateRows = rowsByDate.get(d);
+          if (dateRows) {
+            for (const row of dateRows) {
+              if (matcher(row) && (row.adGroup || "(미분류)") === groupName) windowRows.push(row);
+            }
+          }
+        }
+        return {
+          date: window.date,
+          startDate: window.startDate,
+          endDate: window.endDate,
+          kpi: agg(windowRows),
+        };
+      });
       const creativeCount = new Set(groupTodayRows.map((r) => `${r.creativeCode}||${r.landing}`)).size;
 
       groups.push({

@@ -2,12 +2,7 @@
 
 import { useState } from "react";
 import { ReportHistoryItem } from "@/lib/types";
-
-function formatTimestamp(value: string | null) {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString("ko-KR");
-}
+import { formatTimestamp } from "@/lib/utils";
 
 export function UploadHistory({
   history,

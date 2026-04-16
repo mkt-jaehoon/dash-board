@@ -142,7 +142,7 @@ export function SummaryCard({ media }: { media: MediaStats }) {
 
       {media.recentDaily.length >= 2 ? (
         <div className="mt-4 rounded-xl border border-white/6 bg-black/20 px-4 py-4">
-          <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">배당 추이 777</div>
+          <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">배당 추이</div>
           <div className="mt-3 grid gap-3 md:grid-cols-3">
             {media.recentDaily.map((point, index) => {
               const payoutRate = point.kpi.db > 0 ? (point.kpi.assigned / point.kpi.db) * 100 : null;
