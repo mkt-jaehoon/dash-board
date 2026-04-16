@@ -1,0 +1,13 @@
+.next/
+node_modules/
+.env
+.env.local
+.env*.local
+.vercel
+.omc/
+.test-dist/
+.tmp-check/
+tsconfig.tsbuildinfo
+*.xlsx
+
+.vercel
