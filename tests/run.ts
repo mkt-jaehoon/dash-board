@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import * as XLSX from "xlsx";
-import { analyze, buildComment, normalizeDate } from "../lib/analyzer";
+import { analyze, buildComment, formatText, normalizeDate } from "../lib/analyzer";
 import { normalizeRows, parseWorkbook } from "../lib/excel";
 import { RawRow } from "../lib/types";
 
@@ -307,7 +307,7 @@ async function main() {
     assert.equal(result.mediaGroups.BIGCRAFT.length, 0);
     assert.equal(result.mediaGroups.OTHER.length, 0);
     assert.ok(result.mediaGroups.DA.some((media) => media.key === "meta_total"));
-    assert.match(result.formattedText, /\(TOTAL\)/);
+    assert.match(formatText(result), /\(TOTAL\)/);
   });
 
   await run("buildComment returns actionable text", () => {

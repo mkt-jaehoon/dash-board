@@ -124,10 +124,13 @@ function isCurrentAnalysisShape(result: unknown, expectedDate?: string): boolean
 }
 
 async function loadCachedFromCandidates(sourcePathname: string, date: string, reportVersion: string) {
-  for (const candidate of getCacheSourceCandidates(sourcePathname)) {
-    const cached = await loadCachedAnalysisResult(candidate, date, reportVersion);
-    if (cached && isCurrentAnalysisShape(cached, date)) {
-      return cached;
+  const candidates = getCacheSourceCandidates(sourcePathname);
+  const results = await Promise.allSettled(
+    candidates.map((candidate) => loadCachedAnalysisResult(candidate, date, reportVersion)),
+  );
+  for (const result of results) {
+    if (result.status === "fulfilled" && result.value && isCurrentAnalysisShape(result.value, date)) {
+      return result.value;
     }
   }
   return null;
@@ -211,18 +214,46 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    logReportTiming("cache-miss-response-ready", requestStartedAt, { date: resolvedDate });
-    return NextResponse.json({
-      payload: {
-        uploadedAt: manifest.uploadedAt,
-        availableDates,
-        filterOptions: canUseManifestFilters ? manifest.filterOptions : undefined,
-      },
-      history,
-      result: null,
-      blobConfigured,
-      error: "Analysis cache is unavailable for the current report. Re-upload the report if this persists.",
-    });
+    logReportTiming("cache-miss-fallback-start", requestStartedAt, { date: resolvedDate });
+    try {
+      const scopedSourcePath = getNormalizedSourcePath(manifest.sourcePathname);
+      const { rows } = await loadRowsData(scopedSourcePath);
+      const mediaScopedRows = filterRowsByMediaKey(rows, selectedMediaKey);
+      const fallbackResult = analyze(mediaScopedRows, resolvedDate);
+      const filterOptions = canUseManifestFilters
+        ? manifest.filterOptions
+        : resolveFilterOptions(rows, resolvedDate, undefined, selectedMediaKey, manifest.filterOptions);
+
+      saveCachedAnalysisResult(manifest.sourcePathname, resolvedDate, manifest.uploadedAt, fallbackResult).catch(() => {});
+      logReportTiming("cache-miss-fallback-done", requestStartedAt, { date: resolvedDate });
+
+      return NextResponse.json({
+        payload: {
+          uploadedAt: manifest.uploadedAt,
+          availableDates,
+          filterOptions,
+        },
+        history,
+        result: fallbackResult,
+        blobConfigured,
+      });
+    } catch (fallbackError) {
+      logReportTiming("cache-miss-fallback-failed", requestStartedAt, {
+        date: resolvedDate,
+        error: fallbackError instanceof Error ? fallbackError.message : "unknown",
+      });
+      return NextResponse.json({
+        payload: {
+          uploadedAt: manifest.uploadedAt,
+          availableDates,
+          filterOptions: canUseManifestFilters ? manifest.filterOptions : undefined,
+        },
+        history,
+        result: null,
+        blobConfigured,
+        error: "Analysis cache is unavailable for the current report. Re-upload the report if this persists.",
+      });
+    }
   } catch (error) {
     if (isMissingBlobError(error)) {
       await clearReportManifest();

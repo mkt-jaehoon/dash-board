@@ -527,9 +527,10 @@ export function analyze(rows: RawRow[], selectedDate?: string): AnalysisResult {
     formattedText: "",
   };
 
-  result.formattedText = formatText(result);
   return result;
 }
+
+export { formatText };
 
 function formatKpi(kpi: KpiData | null): string {
   if (!kpi) return "데이터 없음";

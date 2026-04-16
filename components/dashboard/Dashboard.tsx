@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { upload as uploadToBlob } from "@vercel/blob/client";
-import { analyze, computeFilterOptions, cpa, diffPct, diffPp, filterRowsByMediaKey, getAvailableDates, rate } from "@/lib/analyzer";
+import { analyze, computeFilterOptions, cpa, diffPct, diffPp, filterRowsByMediaKey, formatText, getAvailableDates, rate } from "@/lib/analyzer";
 import { parseExcelAction } from "@/app/actions";
 import { KPI_CONFIG } from "@/lib/config";
 import { getMediaKpiMetrics, getOverallKpiMetrics } from "@/lib/media-kpi-config";
@@ -36,6 +36,49 @@ type TabKey = "summary" | "detail" | "text";
 type CompareBase = "d1" | "d7";
 
 const SECTIONS: SectionType[] = ["DA", "SA", "OTHER"];
+
+function TextReportSection({ result, copied, setCopied }: { result: AnalysisResult; copied: boolean; setCopied: (v: boolean) => void }) {
+  const text = useMemo(() => result.formattedText || formatText(result), [result]);
+  return (
+    <section className="defer-render-section overflow-hidden rounded-[28px] border border-white/8 bg-slate-950/70">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/8 px-5 py-4">
+        <div>
+          <div className="text-xs uppercase tracking-[0.24em] text-slate-500">Text Report</div>
+          <div className="mt-1 text-lg font-semibold text-white">복사하거나 공유할 수 있는 텍스트 리포트</div>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(text);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            className="rounded-full bg-white/8 px-4 py-2 text-xs font-medium text-slate-200 hover:bg-white/14"
+          >
+            {copied ? "복사 완료" : "복사"}
+          </button>
+          <button
+            onClick={() => {
+              const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+              const anchor = document.createElement("a");
+              anchor.href = URL.createObjectURL(blob);
+              anchor.download = `daily-report-${result.date.replace(/-/g, "")}.txt`;
+              anchor.click();
+            }}
+            className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-slate-200"
+          >
+            다운로드
+          </button>
+        </div>
+      </div>
+      <div className="max-h-[70vh] overflow-auto px-5 py-5">
+        <pre className="rounded-2xl border border-white/6 bg-black/20 p-5 font-mono text-xs leading-7 text-slate-300">
+          {text}
+        </pre>
+      </div>
+    </section>
+  );
+}
 
 export function Dashboard() {
   const [booting, setBooting] = useState(true);
@@ -794,43 +837,7 @@ export function Dashboard() {
             ) : null}
 
             {tab === "text" ? (
-              <section className="defer-render-section overflow-hidden rounded-[28px] border border-white/8 bg-slate-950/70">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/8 px-5 py-4">
-                  <div>
-                    <div className="text-xs uppercase tracking-[0.24em] text-slate-500">Text Report</div>
-                    <div className="mt-1 text-lg font-semibold text-white">복사하거나 공유할 수 있는 텍스트 리포트</div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(result.formattedText);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 2000);
-                      }}
-                      className="rounded-full bg-white/8 px-4 py-2 text-xs font-medium text-slate-200 hover:bg-white/14"
-                    >
-                      {copied ? "복사 완료" : "복사"}
-                    </button>
-                    <button
-                      onClick={() => {
-                        const blob = new Blob([result.formattedText], { type: "text/plain;charset=utf-8" });
-                        const anchor = document.createElement("a");
-                        anchor.href = URL.createObjectURL(blob);
-                        anchor.download = `daily-report-${result.date.replace(/-/g, "")}.txt`;
-                        anchor.click();
-                      }}
-                      className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-slate-200"
-                    >
-                      다운로드
-                    </button>
-                  </div>
-                </div>
-                <div className="max-h-[70vh] overflow-auto px-5 py-5">
-                  <pre className="rounded-2xl border border-white/6 bg-black/20 p-5 font-mono text-xs leading-7 text-slate-300">
-                    {result.formattedText}
-                  </pre>
-                </div>
-              </section>
+              <TextReportSection result={result} copied={copied} setCopied={setCopied} />
             ) : null}
           </>
         ) : null}
