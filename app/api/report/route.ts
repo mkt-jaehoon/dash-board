@@ -201,12 +201,22 @@ export async function GET(req: NextRequest) {
       cacheHit: Boolean(cached),
     });
     if (cached) {
+      let filterOptions = canUseManifestFilters ? manifest.filterOptions : undefined;
+      if (!canUseManifestFilters && selectedMediaKey) {
+        try {
+          const scopedSourcePath = getNormalizedSourcePath(manifest.sourcePathname);
+          const { rows } = await loadRowsData(scopedSourcePath);
+          filterOptions = resolveFilterOptions(rows, resolvedDate, undefined, selectedMediaKey, manifest.filterOptions);
+        } catch {
+          // fall through with undefined filterOptions
+        }
+      }
       logReportTiming("cache-response-ready", requestStartedAt, { date: resolvedDate });
       return NextResponse.json({
         payload: {
           uploadedAt: manifest.uploadedAt,
           availableDates,
-          filterOptions: canUseManifestFilters ? manifest.filterOptions : undefined,
+          filterOptions,
         },
         history,
         result: cached,
