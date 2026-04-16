@@ -234,7 +234,9 @@ export async function GET(req: NextRequest) {
         ? manifest.filterOptions
         : resolveFilterOptions(rows, resolvedDate, undefined, selectedMediaKey, manifest.filterOptions);
 
-      saveCachedAnalysisResult(manifest.sourcePathname, resolvedDate, manifest.uploadedAt, fallbackResult).catch(() => {});
+      if (!selectedMediaKey || selectedMediaKey === "all") {
+        saveCachedAnalysisResult(manifest.sourcePathname, resolvedDate, manifest.uploadedAt, fallbackResult).catch(() => {});
+      }
       logReportTiming("cache-miss-fallback-done", requestStartedAt, { date: resolvedDate });
 
       return NextResponse.json({

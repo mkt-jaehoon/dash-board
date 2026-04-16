@@ -64,6 +64,7 @@ function TextReportSection({ result, copied, setCopied }: { result: AnalysisResu
               anchor.href = URL.createObjectURL(blob);
               anchor.download = `daily-report-${result.date.replace(/-/g, "")}.txt`;
               anchor.click();
+              URL.revokeObjectURL(anchor.href);
             }}
             className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-slate-200"
           >
