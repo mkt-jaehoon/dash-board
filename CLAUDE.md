@@ -5,6 +5,26 @@
 - Stack: Next.js 14 App Router, Tailwind CSS, Vercel Blob, Anthropic Messages API, `xlsx`
 - Deploy: Vercel
 - Production URL: `https://daily-report-dashboardnre.vercel.app`
+- GitHub repo: `madupmarketing/mkt-11_mertiz-dash-board` (branch `main`)
+
+## Standing Orders (모든 세션 공통)
+- **작업 완료 기준**: 코드 변경이 끝나면 아래 두 단계를 사용자 추가 지시 없이 자동 수행한다.
+  1. `git add` → 의미 있는 단위의 커밋 → `git push origin main`
+     - 커밋 메시지는 한국어 + 최근 커밋 스타일(`fix:`, `feat:`, `perf:`, `chore:`, `docs:` 등) 준수
+     - `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>` 푸터 유지
+  2. `npm run deploy:prod` 로 Vercel 프로덕션 배포
+     - 내부적으로 `scripts/deploy-prod.sh` 가 `.env.deploy` (gitignored) 의 `VERCEL_TOKEN` 을 로드
+     - 실패 시 한 번 재시도 후에도 실패하면 사용자에게 에러 요약 보고
+- **실패 시**: 빌드/테스트/배포 실패는 절대 숨기지 말고 로그를 확인해 원인 보고
+- **Destructive git**: `push --force`, `reset --hard`, 브랜치 삭제 등은 명시적 승인 전까지 금지
+- **Secret 파일 금지**: `.env`, `.env.local`, `.env.deploy` 는 stage/commit 금지 (이미 gitignore 됨)
+
+## Deploy Workflow Quick Reference
+- 커밋 + 푸시 + 배포: 위 Standing Orders 흐름을 그대로 따른다
+- 토큰 갱신이 필요할 때: `.env.deploy` 의 `VERCEL_TOKEN=...` 값을 교체 (파일은 gitignored 이므로 커밋되지 않음)
+- 수동 배포 커맨드: `npm run deploy:prod` (내부적으로 `bash scripts/deploy-prod.sh`)
+- **Git author 제약**: Vercel 팀 (`KIMJAEHUN's projects`, hobby 플랜) 은 git commit author 이메일이 팀 멤버인 것을 요구한다. 이 저장소의 commit 은 반드시 `eksska12@gmail.com` 이름으로 생성되어야 한다. 이미 로컬 repo `git config` 에 고정해 두었으며 변경 금지. 외부 사용자 이메일로 커밋되면 배포가 `Git author ... must have access` 에러로 실패한다.
+- 배포 실패 시 실제 원인 확인: `curl -s -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v13/deployments/<url>"` 에서 `readyStateReason` 필드를 본다.
 
 ## Current Product State
 - Cookie-based password login

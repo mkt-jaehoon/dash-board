@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "tsc -p tsconfig.tests.json && node .test-dist/tests/run.js"
+    "test": "tsc -p tsconfig.tests.json && node .test-dist/tests/run.js",
+    "deploy:prod": "bash scripts/deploy-prod.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.0",
