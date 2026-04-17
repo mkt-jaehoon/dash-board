@@ -19,7 +19,7 @@ import {
 import { AnalysisResult, PersistedReportPayload, RawRow } from "@/lib/types";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 function logReportTiming(label: string, startedAt: number, extra?: Record<string, unknown>) {
   const durationMs = Date.now() - startedAt;
