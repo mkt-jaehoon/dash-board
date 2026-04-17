@@ -443,6 +443,35 @@ export function Dashboard() {
     window.location.href = "/login";
   }, []);
 
+  const onDropboxSync = useCallback(async () => {
+    setLoading(true);
+    setLoadingStage("Dropbox 에서 오늘 리포트를 가져오는 중입니다.");
+    setError(null);
+    try {
+      const response = await fetch("/api/dropbox/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await parseApiResponse<{
+        ok?: boolean;
+        uploadedAt?: string;
+        latestDate?: string;
+        error?: string;
+      }>(response);
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error ?? "Dropbox 동기화에 실패했습니다.");
+      }
+      rowsRef.current = null;
+      await fetchSharedReport({ date: data.latestDate });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Dropbox 동기화에 실패했습니다.");
+    } finally {
+      setLoadingStage(null);
+      setLoading(false);
+    }
+  }, [fetchSharedReport]);
+
   const onRollback = useCallback(async (uploadedAtValue: string) => {
     rowsRef.current = null;
     setLoading(true);
@@ -491,6 +520,13 @@ export function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => void onDropboxSync()}
+              disabled={loading}
+              className="rounded-full bg-sky-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-sky-500/50"
+            >
+              Dropbox 동기화
+            </button>
             <button
               onClick={() => fileRef.current?.click()}
               disabled={loading}
