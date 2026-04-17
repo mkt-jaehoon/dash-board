@@ -89,6 +89,23 @@ function isWeekend(weekday: number) {
   return weekday === 0 || weekday === 6;
 }
 
+// 폴더 적재는 "전일자 영업일" 기준이다.
+//   금요일 → 목요일 폴더
+//   월요일 → 지난 금요일 폴더
+//   토/일 요청(수동) → 지난 금요일 폴더
+function previousBusinessDayInKst(now = new Date()) {
+  const today = kstDateParts(now);
+  let dt = new Date(Date.UTC(Number(today.year), Number(today.month) - 1, Number(today.day)));
+  do {
+    dt = new Date(dt.getTime() - 24 * 60 * 60 * 1000);
+  } while (isWeekend(dt.getUTCDay()));
+  return {
+    year: String(dt.getUTCFullYear()),
+    month: String(dt.getUTCMonth() + 1).padStart(2, "0"),
+    day: String(dt.getUTCDate()).padStart(2, "0"),
+  };
+}
+
 function resolveTargetDate(raw?: string) {
   if (raw && /^\d{4}-\d{2}-\d{2}$/.test(raw)) {
     const [year, month, day] = raw.split("-");
@@ -100,7 +117,7 @@ function resolveTargetDate(raw?: string) {
     const day = raw.slice(4, 6);
     return { year, month, day };
   }
-  return kstDateParts();
+  return previousBusinessDayInKst();
 }
 
 function buildFolderPath(year: string, month: string, day: string) {
