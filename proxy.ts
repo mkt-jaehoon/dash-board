@@ -25,6 +25,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon.ico") ||
     pathname.startsWith("/api/login") ||
+    pathname.startsWith("/api/cron/") ||
     pathname.startsWith("/login")
   ) {
     return NextResponse.next();
