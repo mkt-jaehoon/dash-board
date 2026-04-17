@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { upload as uploadToBlob } from "@vercel/blob/client";
 import { analyze, computeFilterOptions, cpa, diffPct, diffPp, filterRowsByMediaKey, formatText, getAvailableDates, rate } from "@/lib/analyzer";
-import { parseExcelAction } from "@/app/actions";
 import { KPI_CONFIG } from "@/lib/config";
 import { getMediaKpiMetrics, getOverallKpiMetrics } from "@/lib/media-kpi-config";
 import { AnalysisResult, KpiData, MediaStats, RawRow, ReportHistoryItem, SectionType, WorkbookDiagnostics } from "@/lib/types";
@@ -146,6 +145,28 @@ export function Dashboard() {
     })();
   }, [fetchSharedReport]);
 
+  // Preload raw rows into memory after mount so date switching can happen
+  // entirely client-side, avoiding the server-side cache-miss fallback that
+  // can fail/timeout for non-seeded dates.
+  useEffect(() => {
+    if (!uploadedAt || rowsRef.current) return;
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const response = await fetch("/api/rows", { cache: "no-store", signal: controller.signal });
+        if (!response.ok) return;
+        const data = await parseApiResponse<{ rows: RawRow[]; uploadedAt?: string | null }>(response);
+        if (controller.signal.aborted) return;
+        if (Array.isArray(data.rows) && data.rows.length && data.uploadedAt === uploadedAt) {
+          rowsRef.current = data.rows;
+        }
+      } catch {
+        // Silently fall back to the server path if preload fails.
+      }
+    })();
+    return () => controller.abort();
+  }, [uploadedAt]);
+
   const mediaList = useMemo(() => {
     if (!result) return [] as MediaStats[];
     return SECTIONS.flatMap((section) => result.mediaGroups[section] ?? []);
@@ -239,10 +260,10 @@ export function Dashboard() {
       setResult(null);
       setSelectedDate("");
 
-      // 1. Parse Excel via Server Action (keeps xlsx out of client bundle)
-      const formData = new FormData();
-      formData.append("file", file);
-      const { rows, availableDates: parsedDates, diagnostics } = await parseExcelAction(formData);
+      // 1. Parse Excel in the browser (avoids server payload/timeout limits)
+      const buffer = await file.arrayBuffer();
+      const { parseWorkbook } = await import("@/lib/excel");
+      const { rows, availableDates: parsedDates, diagnostics } = await parseWorkbook(buffer);
       rowsRef.current = rows;
       setWorkbookDiagnostics(diagnostics);
 

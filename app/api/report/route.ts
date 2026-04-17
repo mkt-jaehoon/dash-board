@@ -250,9 +250,10 @@ export async function GET(req: NextRequest) {
         blobConfigured,
       });
     } catch (fallbackError) {
+      const reason = fallbackError instanceof Error ? fallbackError.message : "unknown";
       logReportTiming("cache-miss-fallback-failed", requestStartedAt, {
         date: resolvedDate,
-        error: fallbackError instanceof Error ? fallbackError.message : "unknown",
+        error: reason,
       });
       return NextResponse.json({
         payload: {
@@ -263,7 +264,7 @@ export async function GET(req: NextRequest) {
         history,
         result: null,
         blobConfigured,
-        error: "Analysis cache is unavailable for the current report. Re-upload the report if this persists.",
+        error: `선택한 날짜(${resolvedDate})를 서버에서 불러오지 못했습니다. 잠시 후 다시 시도하거나 페이지를 새로고침해 주세요. (${reason})`,
       });
     }
   } catch (error) {
