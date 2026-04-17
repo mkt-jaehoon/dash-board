@@ -7,6 +7,9 @@
 - Production URL: `https://daily-report-dashboardnre.vercel.app`
 - GitHub repo: `madupmarketing/mkt-11_mertiz-dash-board` (branch `main`)
 
+## 현재 블로커
+- **Dropbox 프록시 차단 (2026-04-17 발견)**: `api-auth.madup-dct.site` 가 `/광고사업부/4. 광고주/메리츠파트너스` 이하 모든 경로에서 502 (Cloudflare HTML) 반환. 같은 레벨의 다른 광고주(삼성화재SA 등)는 정상이라 메리츠 공유 폴더에 한정된 namespace/권한 이슈. 2025-02 DCT-4313 / Confluence `fAC_yg` 에서 다룬 "Dropbox API 네임스페이스 변경" 과 동일 패턴. 데컨팀 팀장에게 이관됨 (DM 기준). 프록시 쪽에서 메리츠 공유 폴더 namespace_id 매핑이 정상화되면 `/api/cron/ingest` 가 매 영업일 12:00 KST 에 자동으로 작동. 우리 앱 코드는 수정 불필요.
+
 ## Standing Orders (모든 세션 공통)
 - **작업 완료 기준**: 코드 변경이 끝나면 아래 두 단계를 사용자 추가 지시 없이 자동 수행한다.
   1. `git add` → 의미 있는 단위의 커밋 → `git push origin main`
