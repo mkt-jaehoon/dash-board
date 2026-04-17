@@ -25,9 +25,10 @@ export function buildFallbackInsight(media: MediaStats): InsightContent {
   const d7Cost = media.d7 ? getCost(media.d7) : null;
 
   const groups = media.groups ?? [];
-  const topGroups = [...groups].sort((a, b) => b.today.db - a.today.db).slice(0, 3);
-  const stalledGroups = groups.filter((g) => g.today.db === 0 && (g.d1?.db ?? 0) === 0).slice(0, 3);
-  const riskGroups = groups.filter((g) => g.grade === "bad").slice(0, 3);
+  const topGroups = [...groups].sort((a, b) => b.today.db - a.today.db).filter((g) => g.grade !== "bad").slice(0, 3);
+  const topSet = new Set(topGroups.map((g) => g.name));
+  const stalledGroups = groups.filter((g) => g.today.db === 0 && g.d1 != null && g.d1.db === 0).slice(0, 3);
+  const riskGroups = groups.filter((g) => g.grade === "bad" && !topSet.has(g.name)).slice(0, 3);
 
   const dbTrend: string[] = [
     `광고비 ${num(todayCost)}원, DB ${num(media.today.db)}건, DB CPA ${todayCpa != null ? `${num(todayCpa)}원` : "-"}`,
@@ -138,7 +139,7 @@ async function fetchInsight(params: {
           d7Db: c.d7?.db ?? null,
         })),
       stalledGroups: media.creatives
-        .filter((c) => c.today.db === 0 && (c.d1?.db ?? 0) === 0)
+        .filter((c) => c.today.db === 0 && c.d1 != null && c.d1.db === 0)
         .slice(0, 3)
         .map((c) => ({
           code: c.code,
@@ -150,10 +151,12 @@ async function fetchInsight(params: {
           d1Db: c.d1?.db ?? null,
           d7Db: c.d7?.db ?? null,
         })),
-      topGroupStats: [...(media.groups ?? [])]
-        .sort((a, b) => b.today.db - a.today.db)
-        .slice(0, 5)
-        .map((g) => ({
+      topGroupStats: (() => {
+        const top = [...(media.groups ?? [])]
+          .sort((a, b) => b.today.db - a.today.db)
+          .filter((g) => g.grade !== "bad")
+          .slice(0, 5);
+        return top.map((g) => ({
           name: g.name,
           db: g.today.db,
           cost: g.today.cost,
@@ -161,9 +164,10 @@ async function fetchInsight(params: {
           d1Db: g.d1?.db ?? null,
           grade: g.grade,
           creativeCount: g.creativeCount,
-        })),
+        }));
+      })(),
       stalledGroupStats: (media.groups ?? [])
-        .filter((g) => g.today.db === 0 && (g.d1?.db ?? 0) === 0)
+        .filter((g) => g.today.db === 0 && g.d1 != null && g.d1.db === 0)
         .slice(0, 5)
         .map((g) => ({
           name: g.name,
@@ -174,18 +178,27 @@ async function fetchInsight(params: {
           grade: g.grade,
           creativeCount: g.creativeCount,
         })),
-      riskGroupStats: (media.groups ?? [])
-        .filter((g) => g.grade === "bad")
-        .slice(0, 5)
-        .map((g) => ({
-          name: g.name,
-          db: g.today.db,
-          cost: g.today.cost,
-          assigned: g.today.assigned,
-          d1Db: g.d1?.db ?? null,
-          grade: g.grade,
-          creativeCount: g.creativeCount,
-        })),
+      riskGroupStats: (() => {
+        const topNames = new Set(
+          [...(media.groups ?? [])]
+            .sort((a, b) => b.today.db - a.today.db)
+            .filter((g) => g.grade !== "bad")
+            .slice(0, 5)
+            .map((g) => g.name),
+        );
+        return (media.groups ?? [])
+          .filter((g) => g.grade === "bad" && !topNames.has(g.name))
+          .slice(0, 5)
+          .map((g) => ({
+            name: g.name,
+            db: g.today.db,
+            cost: g.today.cost,
+            assigned: g.today.assigned,
+            d1Db: g.d1?.db ?? null,
+            grade: g.grade,
+            creativeCount: g.creativeCount,
+          }));
+      })(),
     }),
   });
 
