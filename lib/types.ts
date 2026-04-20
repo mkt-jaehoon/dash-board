@@ -73,6 +73,9 @@ export interface MediaStats {
 export interface OverallStats {
   today: KpiData;
   d1: KpiData | null;
+  // 기존 캐시(ANALYSIS_VERSION=4)에는 없을 수 있으므로 optional.
+  // 새로 analyze() 를 돌리는 결과부터 채워진다.
+  d7?: KpiData | null;
   monthAvg: KpiData | null;
 }
 

@@ -346,6 +346,7 @@ export function analyze(rows: RawRow[], selectedDate?: string): AnalysisResult {
   const overall: OverallStats = {
     today: agg(todayRows),
     d1: d1Rows.length ? agg(d1Rows) : null,
+    d7: d7Rows.length ? agg(d7Rows) : null,
     monthAvg: monthlyAvg(monthRows),
   };
 
