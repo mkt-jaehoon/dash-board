@@ -77,7 +77,7 @@
   - total: ~28.5s
 - That explains why on-demand date changes could hit `FUNCTION_INVOCATION_TIMEOUT`
 - Mitigations already applied:
-  - `app/api/report/route.ts` uses `maxDuration = 60`
+  - `app/api/report/route.ts` uses `maxDuration = 300`
   - cached full-report responses for `all` media are returned before loading rows when possible
   - `POST /api/report` now seeds cache for:
     - latest uploaded date
