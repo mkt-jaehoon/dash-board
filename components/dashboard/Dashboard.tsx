@@ -420,22 +420,33 @@ export function Dashboard() {
       setSelectedCampaign("");
       setSelectedGroup("");
 
-      // Recompute filter options for the new media scope.
-      // No re-analysis needed — selectedMedia / kpiSource handle KPI + card display.
       const rows = rowsRef.current;
       if (rows && result) {
-        const mk = mediaKey === "all" ? undefined : mediaKey;
-        const filterOpts = computeFilterOptions(rows, result.date, mk);
-        setCampaignOptions(filterOpts.campaigns);
-        setGroupOptions(filterOpts.groups);
+        setLoading(true);
+        setError(null);
+        try {
+          setLoadingStage("데이터를 분석하는 중입니다.");
+          await new Promise((r) => setTimeout(r, 0));
+          const mk = mediaKey === "all" ? undefined : mediaKey;
+          const targetRows = filterRowsByMediaKey(rows, mk);
+          const newResult = analyze(targetRows, result.date);
+          const filterOpts = computeFilterOptions(rows, newResult.date, mk);
+          setResult(newResult);
+          setCampaignOptions(filterOpts.campaigns);
+          setGroupOptions(filterOpts.groups);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "선택한 매체 정보를 분석하지 못했습니다.");
+        } finally {
+          setLoadingStage(null);
+          setLoading(false);
+        }
         return;
       }
 
-      // Server fallback — only fetches filter options, result stays full
       setLoading(true);
       setError(null);
       try {
-        setLoadingStage("선택한 매체 기준으로 캠페인과 그룹을 불러오는 중입니다.");
+        setLoadingStage("선택한 매체 기준으로 데이터를 불러오는 중입니다.");
         await fetchSharedReport({
           date: selectedDate || undefined,
           mediaKey: mediaKey === "all" ? undefined : mediaKey,
