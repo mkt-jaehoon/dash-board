@@ -325,8 +325,6 @@ export async function POST(req: NextRequest) {
       filterOptions,
     };
 
-    await Promise.all([saveReportManifest(manifest), appendReportHistory(manifest)]);
-
     const cacheJobs: Promise<unknown>[] = [];
     if (precomputedResult?.date) {
       cacheJobs.push(
@@ -340,6 +338,7 @@ export async function POST(req: NextRequest) {
     }
 
     await Promise.all(cacheJobs);
+    await Promise.all([saveReportManifest(manifest), appendReportHistory(manifest)]);
 
     return NextResponse.json({
       payload: {

@@ -103,6 +103,7 @@ export function Dashboard() {
   const [copied, setCopied] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const rowsRef = useRef<RawRow[] | null>(null);
+  const rowsVersionRef = useRef<string | null>(null);
   const [allMediaOptions, setAllMediaOptions] = useState<Array<{ key: string; name: string }>>([]);
   const [tossCostFilter, setTossCostFilter] = useState<CostFilterValue>({ operator: "", value: 0, valueTo: 0 });
 
@@ -117,12 +118,18 @@ export function Dashboard() {
     const data = await parseApiResponse<SharedReportResponse>(response);
     if (!response.ok) throw new Error(data.error ?? "공유 리포트를 불러오지 못했습니다.");
 
+    const nextUploadedAt = data.payload?.uploadedAt ?? null;
+    if (rowsVersionRef.current !== nextUploadedAt) {
+      rowsRef.current = null;
+      rowsVersionRef.current = null;
+    }
+
     setBlobConfigured(data.blobConfigured);
     setAvailableDates(data.payload?.availableDates ?? []);
     setCampaignOptions(data.payload?.filterOptions?.campaigns ?? []);
     setGroupOptions(data.payload?.filterOptions?.groups ?? []);
     setHistory(data.history ?? []);
-    setUploadedAt(data.payload?.uploadedAt ?? null);
+    setUploadedAt(nextUploadedAt);
     setResult(data.result);
     setSelectedDate(params?.date ?? data.result?.date ?? data.payload?.availableDates.at(-1) ?? "");
     if (data.error && !data.result) {
@@ -149,7 +156,7 @@ export function Dashboard() {
   // entirely client-side, avoiding the server-side cache-miss fallback that
   // can fail/timeout for non-seeded dates.
   useEffect(() => {
-    if (!uploadedAt || rowsRef.current) return;
+    if (!uploadedAt || (rowsRef.current && rowsVersionRef.current === uploadedAt)) return;
     const controller = new AbortController();
     void (async () => {
       try {
@@ -159,6 +166,7 @@ export function Dashboard() {
         if (controller.signal.aborted) return;
         if (Array.isArray(data.rows) && data.rows.length && data.uploadedAt === uploadedAt) {
           rowsRef.current = data.rows;
+          rowsVersionRef.current = uploadedAt;
         }
       } catch {
         // Silently fall back to the server path if preload fails.
@@ -248,11 +256,13 @@ export function Dashboard() {
     setLoadingStage("엑셀 파일을 분석하는 중입니다.");
     setError(null);
     try {
+      rowsRef.current = null;
+      rowsVersionRef.current = null;
       setWorkbookDiagnostics(null);
       setAvailableDates([]);
       setCampaignOptions([]);
       setGroupOptions([]);
-      setUploadedAt(new Date().toISOString());
+      setUploadedAt(null);
       setSelectedMediaKey("all");
       setSelectedCampaign("");
       setSelectedGroup("");
@@ -282,9 +292,10 @@ export function Dashboard() {
       // 2. Upload parsed JSON to Blob (faster for future server-side access)
       setLoadingStage("공유 데이터를 업로드하는 중입니다.");
       const safeName = file.name.replace(/[^\w.\-]+/g, "-").replace(/\.(xlsx|xls)$/i, "");
+      const uploadStamp = new Date().toISOString().replace(/[^0-9]/g, "");
       const jsonBlob = new Blob([JSON.stringify(rows)], { type: "application/json" });
       const parsedFile = new File([jsonBlob], `${safeName}.parsed.json`, { type: "application/json" });
-      const blob = await uploadToBlob(`uploads/${safeName}.parsed.json`, parsedFile, {
+      const blob = await uploadToBlob(`uploads/manual-${uploadStamp}-${safeName}.parsed.json`, parsedFile, {
         access: "private",
         handleUploadUrl: "/api/blob-upload",
         multipart: true,
@@ -311,6 +322,7 @@ export function Dashboard() {
       setCampaignOptions(data.payload?.filterOptions?.campaigns ?? []);
       setGroupOptions(data.payload?.filterOptions?.groups ?? []);
       setHistory(data.history ?? []);
+      rowsVersionRef.current = data.payload?.uploadedAt ?? null;
       setUploadedAt(data.payload?.uploadedAt ?? null);
       if (data.result) {
         setResult(data.result);
@@ -463,6 +475,7 @@ export function Dashboard() {
         throw new Error(data.error ?? "Dropbox 동기화에 실패했습니다.");
       }
       rowsRef.current = null;
+      rowsVersionRef.current = null;
       await fetchSharedReport({ date: data.latestDate });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Dropbox 동기화에 실패했습니다.");
@@ -474,6 +487,7 @@ export function Dashboard() {
 
   const onRollback = useCallback(async (uploadedAtValue: string) => {
     rowsRef.current = null;
+    rowsVersionRef.current = null;
     setLoading(true);
     setLoadingStage("이전 업로드로 롤백하는 중입니다.");
     setError(null);
