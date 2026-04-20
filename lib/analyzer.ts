@@ -10,7 +10,7 @@ import {
 import { KPI_CONFIG } from "./config";
 import { MEDIA_CATALOG, getMetaMatcher } from "./media-catalog";
 
-export const ANALYSIS_VERSION = 4;
+export const ANALYSIS_VERSION = 5;
 
 const SECTIONS: SectionType[] = ["DA", "SA", "BIGCRAFT", "OTHER"];
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -346,6 +346,7 @@ export function analyze(rows: RawRow[], selectedDate?: string): AnalysisResult {
   const overall: OverallStats = {
     today: agg(todayRows),
     d1: d1Rows.length ? agg(d1Rows) : null,
+    d7: d7Rows.length ? agg(d7Rows) : null,
     monthAvg: monthlyAvg(monthRows),
   };
 

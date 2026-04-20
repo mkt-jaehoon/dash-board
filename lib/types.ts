@@ -73,6 +73,7 @@ export interface MediaStats {
 export interface OverallStats {
   today: KpiData;
   d1: KpiData | null;
+  d7: KpiData | null;
   monthAvg: KpiData | null;
 }
 

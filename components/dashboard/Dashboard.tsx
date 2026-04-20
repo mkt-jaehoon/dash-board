@@ -243,7 +243,7 @@ export function Dashboard() {
     if (selectedMedia) {
       return { today: selectedMedia.today, d1: selectedMedia.d1, d7: selectedMedia.d7 };
     }
-    return { today: overall, d1: result.overall.d1, d7: null };
+    return { today: overall, d1: result.overall.d1, d7: result.overall.d7 };
   }, [result, overall, selectedMedia]);
 
   const kpiMetrics = useMemo(() => {
