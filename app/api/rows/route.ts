@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     if (pathname.endsWith(".parsed.json")) {
       try {
         const blob = await get(pathname, { access: "private" });
-        if (blob?.statusCode === 200 && blob.stream) {
+        if (blob?.stream) {
           const upstream = new Response(blob.stream).body;
           if (upstream) {
             const encoder = new TextEncoder();
