@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { runDropboxIngest } from "@/lib/dropbox-ingest";
 
@@ -10,7 +11,8 @@ function isAuthorizedCron(req: NextRequest) {
   const header = req.headers.get("authorization") || req.headers.get("Authorization") || "";
   if (!header.startsWith("Bearer ")) return false;
   const token = header.slice("Bearer ".length).trim();
-  return token === secret;
+  if (token.length !== secret.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(token), Buffer.from(secret));
 }
 
 async function handle(req: NextRequest) {
