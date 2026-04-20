@@ -427,9 +427,11 @@ export function Dashboard() {
         try {
           setLoadingStage("데이터를 분석하는 중입니다.");
           await new Promise((r) => setTimeout(r, 0));
+          // result 는 항상 전체 매체 범위로 유지해야 mediaList/allMediaOptions
+          // 드롭다운과 매체별 카드 렌더링이 정상 복구된다. 매체별 표시는
+          // selectedMedia / visibleMediaList 메모가 담당.
           const mk = mediaKey === "all" ? undefined : mediaKey;
-          const targetRows = filterRowsByMediaKey(rows, mk);
-          const newResult = analyze(targetRows, result.date);
+          const newResult = analyze(rows, result.date);
           const filterOpts = computeFilterOptions(rows, newResult.date, mk);
           setResult(newResult);
           setCampaignOptions(filterOpts.campaigns);
