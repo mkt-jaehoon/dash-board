@@ -11,15 +11,23 @@ export async function POST(req: NextRequest) {
   }
 
   const body = (await req.json().catch(() => ({}))) as { date?: string; force?: boolean };
-  const result = await runDropboxIngest({
-    date: body.date,
-    force: Boolean(body.force),
-    notifySlack: true,
-    trigger: "manual",
-  });
+  try {
+    const result = await runDropboxIngest({
+      date: body.date,
+      force: Boolean(body.force),
+      notifySlack: true,
+      trigger: "manual",
+    });
 
-  if (result.ok) {
-    return NextResponse.json(result);
+    if (result.ok) {
+      return NextResponse.json(result);
+    }
+    return NextResponse.json(
+      { ok: false, error: result.error, folderPath: result.folderPath },
+      { status: result.status },
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Dropbox 동기화 중 오류가 발생했습니다.";
+    return NextResponse.json({ ok: false, error: message }, { status: 400 });
   }
-  return NextResponse.json({ ok: false, error: result.error, folderPath: result.folderPath }, { status: result.status });
 }

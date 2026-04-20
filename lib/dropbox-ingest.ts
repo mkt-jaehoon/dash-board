@@ -106,15 +106,31 @@ function previousBusinessDayInKst(now = new Date()) {
   };
 }
 
+function assertValidDate(year: string, month: string, day: string, raw: string) {
+  const y = Number(year);
+  const m = Number(month);
+  const d = Number(day);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  if (
+    dt.getUTCFullYear() !== y ||
+    dt.getUTCMonth() !== m - 1 ||
+    dt.getUTCDate() !== d
+  ) {
+    throw new Error(`유효하지 않은 날짜입니다: ${raw}`);
+  }
+}
+
 function resolveTargetDate(raw?: string) {
   if (raw && /^\d{4}-\d{2}-\d{2}$/.test(raw)) {
     const [year, month, day] = raw.split("-");
+    assertValidDate(year, month, day, raw);
     return { year, month, day };
   }
   if (raw && /^\d{6}$/.test(raw)) {
     const year = `20${raw.slice(0, 2)}`;
     const month = raw.slice(2, 4);
     const day = raw.slice(4, 6);
+    assertValidDate(year, month, day, raw);
     return { year, month, day };
   }
   return previousBusinessDayInKst();

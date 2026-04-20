@@ -467,12 +467,22 @@ export function Dashboard() {
       });
       const data = await parseApiResponse<{
         ok?: boolean;
+        skipped?: boolean;
+        reason?: string;
         uploadedAt?: string;
         latestDate?: string;
         error?: string;
       }>(response);
       if (!response.ok || !data.ok) {
         throw new Error(data.error ?? "Dropbox 동기화에 실패했습니다.");
+      }
+      if (data.skipped) {
+        setError(
+          data.reason
+            ? `동기화 대상이 아닙니다 (${data.reason}). 기존 데이터를 유지합니다.`
+            : "동기화 대상이 아닙니다. 기존 데이터를 유지합니다.",
+        );
+        return;
       }
       rowsRef.current = null;
       rowsVersionRef.current = null;
