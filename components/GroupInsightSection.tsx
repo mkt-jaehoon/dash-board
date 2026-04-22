@@ -82,11 +82,23 @@ export function GroupInsightSection({ media }: { media: MediaStats }) {
 
   const topGroups = [...groups].sort((a, b) => b.today.db - a.today.db).filter((g) => g.grade !== "bad").slice(0, 5);
   const topSet = new Set(topGroups.map((g) => g.name));
-  const stalledGroups = groups.filter((g) => g.today.db === 0 && g.d1 != null && g.d1.db === 0);
+  const stalledGroups = groups.filter(
+    (g) =>
+      g.today.cost > 0 &&
+      g.today.db === 0 &&
+      g.d1 != null &&
+      g.d1.cost > 0 &&
+      g.d1.db === 0,
+  );
   const riskGroups = groups.filter((g) => g.grade === "bad" && g.today.db > 0 && !topSet.has(g.name));
 
   const stalledCreatives = media.creatives.filter(
-    (c) => c.today.db === 0 && c.d1 != null && c.d1.db === 0,
+    (c) =>
+      c.today.cost > 0 &&
+      c.today.db === 0 &&
+      c.d1 != null &&
+      c.d1.cost > 0 &&
+      c.d1.db === 0,
   );
 
   return (

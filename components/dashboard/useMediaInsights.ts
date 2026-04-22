@@ -27,7 +27,16 @@ export function buildFallbackInsight(media: MediaStats): InsightContent {
   const groups = media.groups ?? [];
   const topGroups = [...groups].sort((a, b) => b.today.db - a.today.db).filter((g) => g.grade !== "bad").slice(0, 3);
   const topSet = new Set(topGroups.map((g) => g.name));
-  const stalledGroups = groups.filter((g) => g.today.db === 0 && g.d1 != null && g.d1.db === 0).slice(0, 3);
+  const stalledGroups = groups
+    .filter(
+      (g) =>
+        g.today.cost > 0 &&
+        g.today.db === 0 &&
+        g.d1 != null &&
+        g.d1.cost > 0 &&
+        g.d1.db === 0,
+    )
+    .slice(0, 3);
   const riskGroups = groups.filter((g) => g.grade === "bad" && !topSet.has(g.name)).slice(0, 3);
 
   const dbTrend: string[] = [
@@ -139,7 +148,14 @@ async function fetchInsight(params: {
           d7Db: c.d7?.db ?? null,
         })),
       stalledGroups: media.creatives
-        .filter((c) => c.today.db === 0 && c.d1 != null && c.d1.db === 0)
+        .filter(
+          (c) =>
+            c.today.cost > 0 &&
+            c.today.db === 0 &&
+            c.d1 != null &&
+            c.d1.cost > 0 &&
+            c.d1.db === 0,
+        )
         .slice(0, 3)
         .map((c) => ({
           code: c.code,
@@ -167,7 +183,14 @@ async function fetchInsight(params: {
         }));
       })(),
       stalledGroupStats: (media.groups ?? [])
-        .filter((g) => g.today.db === 0 && g.d1 != null && g.d1.db === 0)
+        .filter(
+          (g) =>
+            g.today.cost > 0 &&
+            g.today.db === 0 &&
+            g.d1 != null &&
+            g.d1.cost > 0 &&
+            g.d1.db === 0,
+        )
         .slice(0, 5)
         .map((g) => ({
           name: g.name,
