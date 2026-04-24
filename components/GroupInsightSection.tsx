@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { cpa, diffPct, rate } from "@/lib/analyzer";
+import { cpa, diffPct, isStalled, rate } from "@/lib/analyzer";
 import { GroupStats, MediaStats } from "@/lib/types";
 import { Delta, getStateLabel, getStateTone, num } from "./media-utils";
 
@@ -82,24 +82,10 @@ export function GroupInsightSection({ media }: { media: MediaStats }) {
 
   const topGroups = [...groups].sort((a, b) => b.today.db - a.today.db).filter((g) => g.grade !== "bad").slice(0, 5);
   const topSet = new Set(topGroups.map((g) => g.name));
-  const stalledGroups = groups.filter(
-    (g) =>
-      g.today.cost > 0 &&
-      g.today.db === 0 &&
-      g.d1 != null &&
-      g.d1.cost > 0 &&
-      g.d1.db === 0,
-  );
+  const stalledGroups = groups.filter(isStalled);
   const riskGroups = groups.filter((g) => g.grade === "bad" && g.today.db > 0 && !topSet.has(g.name));
 
-  const stalledCreatives = media.creatives.filter(
-    (c) =>
-      c.today.cost > 0 &&
-      c.today.db === 0 &&
-      c.d1 != null &&
-      c.d1.cost > 0 &&
-      c.d1.db === 0,
-  );
+  const stalledCreatives = media.creatives.filter(isStalled);
 
   return (
     <div className="space-y-5">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { cpa, diffPct, rate } from "@/lib/analyzer";
+import { cpa, diffPct, isStalled, rate } from "@/lib/analyzer";
 import { InsightContent, MediaStats } from "@/lib/types";
 import { getAssigned, getCost, num } from "@/components/media-utils";
 import { parseApiResponse } from "@/lib/utils";
@@ -27,16 +27,7 @@ export function buildFallbackInsight(media: MediaStats): InsightContent {
   const groups = media.groups ?? [];
   const topGroups = [...groups].sort((a, b) => b.today.db - a.today.db).filter((g) => g.grade !== "bad").slice(0, 3);
   const topSet = new Set(topGroups.map((g) => g.name));
-  const stalledGroups = groups
-    .filter(
-      (g) =>
-        g.today.cost > 0 &&
-        g.today.db === 0 &&
-        g.d1 != null &&
-        g.d1.cost > 0 &&
-        g.d1.db === 0,
-    )
-    .slice(0, 3);
+  const stalledGroups = groups.filter(isStalled).slice(0, 3);
   const riskGroups = groups.filter((g) => g.grade === "bad" && !topSet.has(g.name)).slice(0, 3);
 
   const dbTrend: string[] = [
@@ -147,15 +138,8 @@ async function fetchInsight(params: {
           d1Db: c.d1?.db ?? null,
           d7Db: c.d7?.db ?? null,
         })),
-      stalledGroups: media.creatives
-        .filter(
-          (c) =>
-            c.today.cost > 0 &&
-            c.today.db === 0 &&
-            c.d1 != null &&
-            c.d1.cost > 0 &&
-            c.d1.db === 0,
-        )
+      stalledCreatives: media.creatives
+        .filter(isStalled)
         .slice(0, 3)
         .map((c) => ({
           code: c.code,
@@ -183,14 +167,7 @@ async function fetchInsight(params: {
         }));
       })(),
       stalledGroupStats: (media.groups ?? [])
-        .filter(
-          (g) =>
-            g.today.cost > 0 &&
-            g.today.db === 0 &&
-            g.d1 != null &&
-            g.d1.cost > 0 &&
-            g.d1.db === 0,
-        )
+        .filter(isStalled)
         .slice(0, 5)
         .map((g) => ({
           name: g.name,

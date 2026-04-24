@@ -58,7 +58,7 @@ type InsightRequest = {
   gradeCount: { good: number; caution: number; bad: number };
   topCreatives: CreativeSnapshot[];
   d1Drivers: CreativeSnapshot[];
-  stalledGroups: CreativeSnapshot[];
+  stalledCreatives: CreativeSnapshot[];
   topGroupStats?: GroupSnapshot[];
   stalledGroupStats?: GroupSnapshot[];
   riskGroupStats?: GroupSnapshot[];
@@ -243,7 +243,7 @@ function buildBaseInsight(body: InsightRequest): InsightPayload {
     actionItems.push(`전일 대비 변동에 영향을 준 소재\n${d1DriverLines.join("\n")}`);
   }
 
-  const stalledLines = body.stalledGroups.slice(0, 3).map((item) => `- ${item.code}`);
+  const stalledLines = body.stalledCreatives.slice(0, 3).map((item) => `- ${item.code}`);
   if (stalledLines.length) {
     actionItems.push(`최근 2일 연속 성과가 없는 소재\n${stalledLines.join("\n")}`);
   }
@@ -338,7 +338,7 @@ function buildAiPrompt(body: InsightRequest, base: InsightPayload) {
     `[위험 그룹] ${(body.riskGroupStats ?? []).map((g) => g.name).join(" / ") || "없음"}`,
     `[전일 변동 소재] ${body.d1Drivers.map((item) => item.code).join(" / ") || "없음"}`,
     `[상위 소재] ${body.topCreatives.map((item) => item.code).join(" / ") || "없음"}`,
-    `[중단 후보] ${body.stalledGroups.map((item) => item.code).join(" / ") || "없음"}`,
+    `[중단 후보] ${body.stalledCreatives.map((item) => item.code).join(" / ") || "없음"}`,
   ].join("\n");
 }
 

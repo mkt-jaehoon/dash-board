@@ -50,6 +50,18 @@ export function diffPp(a: number | null, b: number | null): number | null {
   return a - b;
 }
 
+// "정체": 비용은 집행됐지만 DB 가 오늘과 전일 연속으로 0 인 상태.
+// 그룹/소재 어떤 단위에도 같은 정의를 쓰므로 `today` + `d1` 만 받는다.
+export function isStalled(stats: { today: KpiData; d1: KpiData | null }): boolean {
+  return (
+    stats.today.cost > 0 &&
+    stats.today.db === 0 &&
+    stats.d1 != null &&
+    stats.d1.cost > 0 &&
+    stats.d1.db === 0
+  );
+}
+
 function num(value: number): string {
   return Math.round(value).toLocaleString("ko-KR");
 }
