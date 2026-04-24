@@ -422,25 +422,16 @@ export function Dashboard() {
 
       const rows = rowsRef.current;
       if (rows && result) {
-        setLoading(true);
-        setError(null);
+        // result(= mediaGroups 전체) 는 그대로 두고, 매체별 표시는
+        // selectedMedia / visibleMediaList 메모가 담당한다. 매체 변경에는
+        // 전체 재분석이 필요 없고 캠페인/그룹 옵션만 매체 스코프로 갱신.
         try {
-          setLoadingStage("데이터를 분석하는 중입니다.");
-          await new Promise((r) => setTimeout(r, 0));
-          // result 는 항상 전체 매체 범위로 유지해야 mediaList/allMediaOptions
-          // 드롭다운과 매체별 카드 렌더링이 정상 복구된다. 매체별 표시는
-          // selectedMedia / visibleMediaList 메모가 담당.
           const mk = mediaKey === "all" ? undefined : mediaKey;
-          const newResult = analyze(rows, result.date);
-          const filterOpts = computeFilterOptions(rows, newResult.date, mk);
-          setResult(newResult);
+          const filterOpts = computeFilterOptions(rows, result.date, mk);
           setCampaignOptions(filterOpts.campaigns);
           setGroupOptions(filterOpts.groups);
         } catch (err) {
           setError(err instanceof Error ? err.message : "선택한 매체 정보를 분석하지 못했습니다.");
-        } finally {
-          setLoadingStage(null);
-          setLoading(false);
         }
         return;
       }
@@ -708,6 +699,11 @@ export function Dashboard() {
                         </button>
                       ))}
                     </div>
+                    {compareBase === "d7" && result.overall.d7 === undefined ? (
+                      <span className="text-[11px] text-amber-300/80">
+                        이전 업로드 기준입니다. 재업로드 시 전주 비교값이 채워집니다.
+                      </span>
+                    ) : null}
                   </div>
                   <div
                     className={`mt-5 grid gap-4 ${
