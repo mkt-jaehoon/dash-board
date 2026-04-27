@@ -175,6 +175,12 @@ async function storeRowsAsBlob(rows: unknown, sourceName: string) {
 
 async function notify(text: string, notifySlack: boolean) {
   if (!notifySlack) return;
+  // Dropbox 권한 부재 기간 동안 실패 알림 노이즈를 막기 위한 글로벌 킬 스위치.
+  // Dropbox 복구 시 env 에서 DISABLE_SLACK_NOTIFY 만 빼면 원복된다.
+  if (process.env.DISABLE_SLACK_NOTIFY === "1") {
+    console.log("[dropbox-ingest] Slack notify suppressed (DISABLE_SLACK_NOTIFY=1):", text);
+    return;
+  }
   const channel = process.env.SLACK_NOTIFY_CHANNEL;
   if (!channel) return;
   await sendSlackMessage(channel, text);
