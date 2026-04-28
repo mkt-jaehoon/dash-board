@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>실시간 광고비 대시보드</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/config.js"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="toolbar">
+        <div>
+          <p class="eyebrow">Realtime spend</p>
+          <h1>실시간 광고비 대시보드</h1>
+        </div>
+        <div class="controls">
+          <button id="copyButton" class="secondary" type="button" disabled>스프레드시트 복사</button>
+          <button id="refreshButton" type="button">실시간 광고비 출력</button>
+        </div>
+      </section>
+
+      <section class="summary" aria-label="요약">
+        <div class="metric">
+          <span>전체 합계</span>
+          <strong id="totalAll">-</strong>
+        </div>
+        <div class="metric">
+          <span>실시간 매체</span>
+          <strong id="totalDirect">-</strong>
+        </div>
+        <div class="metric">
+          <span>빅크래프트</span>
+          <strong id="totalBigcraft">-</strong>
+        </div>
+        <div class="metric muted">
+          <span>수집 기준</span>
+          <strong id="collectedAt">-</strong>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article>
+          <div class="section-head">
+            <h2>실시간 매체</h2>
+            <span id="directStatus">대기</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>매체</th>
+                <th>광고비용</th>
+                <th>상태</th>
+              </tr>
+            </thead>
+            <tbody id="directRows"></tbody>
+          </table>
+        </article>
+
+        <article>
+          <div class="section-head">
+            <h2>빅크래프트</h2>
+            <span id="bigcraftStatus">대기</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>매체</th>
+                <th>광고비용</th>
+                <th>상태</th>
+              </tr>
+            </thead>
+            <tbody id="bigcraftRows"></tbody>
+          </table>
+        </article>
+      </section>
+
+      <p class="notice" id="notice">버튼을 누르면 서버에서 현재 광고비를 수집하고 캐시에 저장합니다.</p>
+      <section class="help" aria-label="버튼 안내">
+        <p><strong>실시간 광고비 출력</strong>: 현재 시점 기준으로 서버에서 광고비를 새로 수집합니다.</p>
+        <p><strong>스프레드시트 복사</strong>: 화면의 매체명과 광고비용을 A열/B열에 바로 붙여넣을 수 있게 복사합니다.</p>
+        <p>동작 오류가 나면 오류 문구와 함께 DM으로 요청해 주세요.</p>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

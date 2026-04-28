@@ -1,0 +1,16 @@
+[Unit]
+Description=Realtime ad cost dashboard API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/TIME
+Environment=PYTHONUTF8=1
+Environment=PYTHONIOENCODING=utf-8
+ExecStart=/usr/bin/xvfb-run -a env PYTHONUTF8=1 PYTHONIOENCODING=utf-8 /usr/bin/python3 -u /root/TIME/dashboard_server.py --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
