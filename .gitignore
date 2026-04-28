@@ -12,3 +12,5 @@ server.log
 server.err
 dashboard_server.log
 dashboard_server.err.log
+
+.vercel

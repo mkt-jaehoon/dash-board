@@ -1,21 +1,25 @@
 {
+  "framework": null,
+  "buildCommand": null,
+  "installCommand": null,
+  "outputDirectory": "public",
   "cleanUrls": true,
   "rewrites": [
     {
       "source": "/",
-      "destination": "/public/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/app.js",
-      "destination": "/public/app.js"
+      "destination": "/app.js"
     },
     {
       "source": "/config.js",
-      "destination": "/public/config.js"
+      "destination": "/config.js"
     },
     {
       "source": "/styles.css",
-      "destination": "/public/styles.css"
+      "destination": "/styles.css"
     }
   ]
 }
