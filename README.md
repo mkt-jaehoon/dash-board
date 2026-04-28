@@ -33,6 +33,7 @@ vercel.json             Vercel 라우팅 설정
 ## Vercel 역할
 
 Vercel은 광고비를 직접 수집하지 않습니다. 브라우저 자동화와 Google Sheets 접근은 NCP 서버에서만 실행합니다.
+따라서 `.vercelignore`는 NCP 전용 Python 파일(`dashboard_server.py`, `realtime_costs.py`, `requirements.txt`, `deploy/`)을 Vercel 업로드에서 제외합니다.
 
 Vercel 환경변수:
 

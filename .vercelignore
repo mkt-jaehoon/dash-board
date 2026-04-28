@@ -2,6 +2,10 @@ service-account.json
 *.env
 .env
 .vercel/
+dashboard_server.py
+realtime_costs.py
+requirements.txt
+deploy/
 TEST/
 cache/
 __pycache__/
