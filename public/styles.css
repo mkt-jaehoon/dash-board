@@ -148,6 +148,7 @@ article {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   padding: 16px 18px;
   border-bottom: 1px solid #30363d;
 }
@@ -155,6 +156,7 @@ article {
 .section-head span {
   color: #8b949e;
   font-size: 13px;
+  text-align: right;
 }
 
 table {

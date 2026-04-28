@@ -25,6 +25,22 @@ function statusText(status) {
   return status === "ok" ? "수집 완료" : "수집 불가";
 }
 
+function collectionBasisText(collectedAt) {
+  const date = new Date(collectedAt);
+  if (Number.isNaN(date.getTime())) return "현재 수집 기준";
+
+  const parts = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).formatToParts(date);
+  const dayPeriod = parts.find((part) => part.type === "dayPeriod")?.value || "";
+  const hour = parts.find((part) => part.type === "hour")?.value || "";
+  const minute = parts.find((part) => part.type === "minute")?.value || "";
+  return `현재 ${dayPeriod} ${hour}시 ${minute}분 수집 기준`.replace(/\s+/g, " ").trim();
+}
+
 function renderRows(target, rows) {
   target.innerHTML = "";
   for (const row of rows) {
@@ -44,11 +60,11 @@ function render(payload) {
   elements.totalAll.textContent = won(payload.totals.all);
   elements.totalDirect.textContent = won(payload.totals.direct);
   elements.totalBigcraft.textContent = won(payload.totals.bigcraft);
-  elements.collectedAt.textContent = "Real time";
+  elements.collectedAt.textContent = collectionBasisText(payload.collectedAt);
   renderRows(elements.directRows, payload.direct);
   renderRows(elements.bigcraftRows, payload.bigcraft);
   elements.directStatus.textContent = `${payload.direct.length}개`;
-  elements.bigcraftStatus.textContent = `${payload.bigcraft.length}개`;
+  elements.bigcraftStatus.textContent = `${payload.bigcraft.length}개 · ${payload.timeSlot} 스프레드시트 업데이트 기준`;
   elements.notice.textContent = `마지막 수집: ${payload.collectedAt}`;
   elements.copyButton.disabled = false;
 }
