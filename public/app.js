@@ -44,7 +44,7 @@ function render(payload) {
   elements.totalAll.textContent = won(payload.totals.all);
   elements.totalDirect.textContent = won(payload.totals.direct);
   elements.totalBigcraft.textContent = won(payload.totals.bigcraft);
-  elements.collectedAt.textContent = `${payload.date} ${payload.timeSlot}`;
+  elements.collectedAt.textContent = "Real time";
   renderRows(elements.directRows, payload.direct);
   renderRows(elements.bigcraftRows, payload.bigcraft);
   elements.directStatus.textContent = `${payload.direct.length}개`;
